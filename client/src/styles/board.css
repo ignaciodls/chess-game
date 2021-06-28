@@ -46,5 +46,14 @@
 }
 
 .isSelected{
-    background-color: rgb(119, 119, 212);
+    background-color: rgb(131, 143, 255);
+    -webkit-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    -moz-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    box-shadow: inset 0px 0px 30px -8px rgb(42, 56, 133);
+}
+.ableToKill{
+    background-color: rgb(255, 0, 0);
+    -webkit-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    -moz-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    box-shadow: inset 0px 0px 30px -8px rgb(124, 52, 52);
 }
