@@ -1,0 +1,50 @@
+.root{
+
+    height: 100vh;
+    width: 100vw;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+
+}
+
+.board{
+    height: 90vh;
+    width: 90vh;
+    display: flex;
+    flex-direction: column;
+    border: 10px solid rgb(78, 69, 45);
+    
+}
+
+.row{
+
+    display: flex;
+    height: 12.5%;
+    width: 100%;
+
+}
+
+.square{
+    width: 12.5%;
+    height: 100%;
+    font-size: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.black{
+    background-color: rgb(128, 194, 115);
+}
+
+.white{
+    background-color: white;
+}
+
+.isSelected{
+    background-color: rgb(119, 119, 212);
+}
