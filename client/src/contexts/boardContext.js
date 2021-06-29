@@ -1,4 +1,5 @@
 import { createContext, useContext, useState } from "react";
+import usePiecesFunctions from "../hooks/usePiecesFunctions";
 
 
 const boardContext = createContext()
@@ -7,10 +8,10 @@ const boardContext = createContext()
 export const BoardProvider = ({children}) => {
 
     const [board, setBoard] = useState([
-        ["♜","♞","♝","♚","♛","♝","♞","♜"],
+        ["♜","♗","♞","♚","♛","♝","♞","♜"],
         ["♟","♟","♟","♟","♟","♟","♟","♟"],
         [null,null,null,"♔",null,null,null,null],
-        [null,null,null,"♕",null,null,null,"♘"],
+        [null,"♗",null,"♗",null,null,null,"♘"],
         [null,null,null,null,null,null,null,null],
         [null,null,null,null,null,null,null,null],
         ["♙","♙","♙","♙","♙","♙","♙","♙"],
@@ -19,12 +20,56 @@ export const BoardProvider = ({children}) => {
 
     const [selectedCell, setSelectedCell] = useState(null)
 
-    const [cellsInPath, setCellsInPath] = useState([])
+    const [enemyPieces, setEnemyPieces] = useState(["♜","♞","♝","♚","♛","♟"])
 
-    const [ableToKill, setAbleToKill] = useState([])
+    const [myColorPieces, setMyColorPieces] = useState('white')
 
-    const blackList=["♜","♞","♝","♚","♛","♟"]
+    const [paths, setPaths] = useState({
+        'white':[],
+        'black':[]
+    })
+
+    const [cellsBeingThreatnedBy, setCellsBeingThreatnedBy] = useState({
+        'enemy':[],
+        'ally':[]
+    })
+
+    //const blackList=["♜","♞","♝","♚","♛","♟"]
     const whiteList=["♖","♘","♗","♔","♕","♙"]
+
+    const { pawnPathAndThreatenedCells,
+            knightPathAndThreatenedCells,
+            bishopPathAndThreatenedCells,
+            rookPathAndThreatenedCells,
+            queenPathAndThreatenedCells,
+            kingPathAndThreatenedCells  } = usePiecesFunctions()
+
+    const calculatePathsAndThreatenedCells = () =>{
+
+        let whitePathsObj = {}
+        let blackPathsObj = {}
+        let cellsIThreathens = {}
+        let cellsEnemyThreatens = {}
+        
+
+        board.forEach((row,x) => {
+            row.forEach((piece,y) => {
+
+                if(piece !== null){
+                    calculatePathAndThreatenedCells(piece, x, y, whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens)
+
+                }
+            })
+        });
+        setPaths({
+            'white':whitePathsObj,
+            'black':blackPathsObj
+        })
+        setCellsBeingThreatnedBy({
+            'enemy':cellsEnemyThreatens,
+            'ally':cellsIThreathens
+        })
+    }
 
     const isBlack = (x,y) => {
         
@@ -49,358 +94,63 @@ export const BoardProvider = ({children}) => {
         }   
     }
 
-    const selectCell = (coord,piece) => {
+    const selectCell = (coord) => {
+        
+        if(selectedCell){
+            if(paths[myColorPieces][selectedCell]?.includes(coord)){
+                setBoard(
+                    board.map((row,x) =>{
+                        return row.map((currPiece,y) => {
+                            if(x === parseInt(coord[0]) && y === parseInt(coord[1])){
+                                return board[selectedCell[0]][selectedCell[1]]
+                            }
+                            else if(x === parseInt(selectedCell[0]) && y === parseInt(selectedCell[1])){
+                                return null
+                            }
+                            else{
+                                return currPiece
+                            }
+                        })
+                    })
+                )
+            }
+        }
 
         if(board[coord[0]][coord[1]] !== null){
             setSelectedCell(coord)
         }
-        else{
-            setCellsInPath([])
+        if(board[coord[0]][coord[1]] == null){
             setSelectedCell(null)
         }
 
-        calculatePath(piece,coord)
-
     }
 
-    const calculatePath = (piece,[x,y]) => {
+    const calculatePathAndThreatenedCells = (piece, x, y, whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens) => {
 
-        x = parseInt(x)
-        y = parseInt(y)
+        if(piece === '♙' || piece === '♟'){
+            pawnPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
+        }
 
-        if(piece === '♟'){
-            let currentPath = []
-            
-            let limit = x === 1 ? 3 : 2
-
-            for (let i = 1; i < limit; i++) {
-                
-                currentPath.push(`${x+i}${y}`)
-                
-            }
-            
-            setCellsInPath(currentPath)
-
-        } 
-        if(piece === '♙'){
-            let currentPath = []
-            
-            let limit = x === 6 ? 3 : 2
-
-            for (let i = 1; i < limit; i++) {
-                
-                currentPath.push(`${x-i}${y}`)
-                
-            }
-            setCellsInPath(currentPath)            
-
-        } 
-        
         if(piece === '♘' || piece === '♞'){
-            
-            let currentPath = []
-            let currentKill = []
-            for (let i = -2; i<3; i++) {
-
-                for(let j = -2 ;j<3; j++){
-
-                    if(((i===-1||i===1) && (j===2||j===-2))||((i===-2||i===2) && (j===1||j===-1))){  
-                        if(x+i >= 0 && x+i <= 7 && y+j >= 0 && y+j <= 7){
-                            if(piece === '♘' && blackList.includes(board[x+i][y+j])){
-                                currentKill.push(`${x+i}${y+j}`)
-                                continue
-                            }
-
-                            currentPath.push(`${x+i}${y+j}`)
-
-                        }
-    
-                    }
-                    
-                }  
-
-            }
-            setAbleToKill(currentKill)
-            setCellsInPath(currentPath) 
-
+            knightPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
         } 
-
 
         if(piece === '♗' || piece === '♝'){
-            let currentPath = []
-
-            let collidedTopLeftDiagonal = false
-            let collidedTopRightDiagonal = false
-            let collidedBotRightDiagonal = false
-            let collidedBotLeftDiagonal = false
-
-            for (let i = 1; i < 8; i++) {
-
-
-                if(!collidedTopLeftDiagonal && x - i >= 0 && y - i >= 0){
-                    if(board[x-i][y-i] === null){
-                        currentPath.push(`${x-i}${y-i}`)
-                    }
-                    else{
-                        collidedTopLeftDiagonal = true
-                    }
-                }
-                if(!collidedTopRightDiagonal && x - i >= 0 && y + i <= 7){
-                    if(board[x-i][y+i] === null){
-                        currentPath.push(`${x-i}${y+i}`)
-                    }
-                    else{
-                        collidedTopRightDiagonal = true
-                    }
-                }
-                if(!collidedBotRightDiagonal && x + i <= 7 && y - i >= 0){
-                    if(board[x+i][y-i] === null){
-                        currentPath.push(`${x+i}${y-i}`)
-                    }
-                    else{
-                        collidedBotRightDiagonal = true
-                    }
-                }
-                if(!collidedBotLeftDiagonal && x + i <= 7 && y + i <= 7){
-                    if(board[x+i][y+i] === null){
-                        currentPath.push(`${x+i}${y+i}`)
-                    }
-                    else{
-                        collidedBotLeftDiagonal = true
-                    }
-                }
-            }
-
-            setCellsInPath(currentPath)
-            
+            bishopPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)            
         }
 
         if(piece === '♖' || piece === '♜'){
-
-            let currentPath = []
-
-            let collidedTopColumn = false
-            let collidedRightRow = false
-            let collidedBotColumn = false
-            let collidedLeftRow = false
-
-            for (let i = 1; i < 8; i++) {
-                if(!collidedTopColumn && x - i >= 0){
-                    if(board[x-i][y] === null){
-                        currentPath.push(`${x-i}${y}`)
-                    }
-                    else{
-                        collidedTopColumn = true
-                    }
-                }
-                if(!collidedRightRow && y + i <= 7){
-                    if(board[x][y+i] === null){
-                        currentPath.push(`${x}${y+i}`)
-                    }
-                    else{
-                        collidedRightRow = true
-                    }
-                }
-                if(!collidedBotColumn && x + i <= 7){
-                    if(board[x+i][y] === null){
-                        currentPath.push(`${x+i}${y}`)
-                    }
-                    else{
-                        collidedBotColumn = true
-                    }
-                }
-                if(!collidedLeftRow && y - i >= 0){
-                    if(board[x][y-i] === null){
-                        currentPath.push(`${x}${y-i}`)
-                    }
-                    else{
-                        collidedLeftRow = true
-                    }
-                }
-            }
-                
-            setCellsInPath(currentPath) 
+            rookPathAndThreatenedCells(x, y, piece ,whitePathsObj, blackPathsObj ,whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
         }
 
         if(piece === '♕' || piece === '♛'){
-            let currentPath = []
-
-            let collidedTopLeftDiagonal = false
-            let collidedTopRightDiagonal = false
-            let collidedBotRightDiagonal = false
-            let collidedBotLeftDiagonal = false
-
-            let collidedTopColumn = false
-            let collidedRightRow = false
-            let collidedBotColumn = false
-            let collidedLeftRow = false
-
-            for (let i = 1; i < 8; i++) {
-
-                //-----------------DIAGONALS----------------------
-
-                if(!collidedTopLeftDiagonal && x - i >= 0 && y - i >= 0){
-                    if(board[x-i][y-i] === null){
-                        currentPath.push(`${x-i}${y-i}`)
-                    }
-                    else{
-                        collidedTopLeftDiagonal = true
-                    }
-                }
-                if(!collidedTopRightDiagonal && x - i >= 0 && y + i <= 7){
-                    if(board[x-i][y+i] === null){
-                        currentPath.push(`${x-i}${y+i}`)
-                    }
-                    else{
-                        collidedTopRightDiagonal = true
-                    }
-                }
-                if(!collidedBotRightDiagonal && x + i <= 7 && y - i >= 0){
-                    if(board[x+i][y-i] === null){
-                        currentPath.push(`${x+i}${y-i}`)
-                    }
-                    else{
-                        collidedBotRightDiagonal = true
-                    }
-                }
-                if(!collidedBotLeftDiagonal && x + i <= 7 && y + i <= 7){
-                    if(board[x+i][y+i] === null){
-                        currentPath.push(`${x+i}${y+i}`)
-                    }
-                    else{
-                        collidedBotLeftDiagonal = true
-                    }
-                }
-
-                //-----------------ROWS-COLUMNS-----------------------
-
-                if(!collidedTopColumn && x - i >= 0){
-                    if(board[x-i][y] === null){
-                        currentPath.push(`${x-i}${y}`)
-                    }
-                    else{
-                        collidedTopColumn = true
-                    }
-                }
-                if(!collidedRightRow && y + i <= 7){
-                    if(board[x][y+i] === null){
-                        currentPath.push(`${x}${y+i}`)
-                    }
-                    else{
-                        collidedRightRow = true
-                    }
-                }
-                if(!collidedBotColumn && x + i <= 7){
-                    if(board[x+i][y] === null){
-                        currentPath.push(`${x+i}${y}`)
-                    }
-                    else{
-                        collidedBotColumn = true
-                    }
-                }
-                if(!collidedLeftRow && y - i >= 0){
-                    if(board[x][y-i] === null){
-                        currentPath.push(`${x}${y-i}`)
-                    }
-                    else{
-                        collidedLeftRow = true
-                    }
-                }
-            }
-
-            setCellsInPath(currentPath)
-
+            queenPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
         }
-
 
         if(piece === '♔' || piece === '♚'){
-            let currentPath = []
-            
-            let collidedTopLeftCell = false
-            let collidedTopCell = false
-            let collidedTopRightCell = false
-            let collidedRightCell = false
-            let collidedBotRightCell = false
-            let collidedBotCell = false
-            let collidedBotLeftCell = false
-            let collidedLeftCell = false
-
-            //-----------------ROWS-COLUMNS----------------------
-
-            if(!collidedTopCell && x - 1 >= 0){
-                if(board[x-1][y] === null){
-                    currentPath.push(`${x-1}${y}`)
-                }
-                else{
-                    collidedTopCell = true
-                }
-            }
-            if(!collidedRightCell && y + 1 <= 7){
-                if(board[x][y+1] === null){
-                    currentPath.push(`${x}${y+1}`)
-                }
-                else{
-                    collidedRightCell = true
-                }
-            }
-            if(!collidedBotCell && x + 1 <= 7){
-                if(board[x+1][y] === null){
-                    currentPath.push(`${x+1}${y}`)
-                }
-                else{
-                    collidedBotCell = true
-                }
-            }
-            if(!collidedLeftCell && y - 1 >= 0){
-                if(board[x][y-1] === null){
-                    currentPath.push(`${x}${y-1}`)
-                }
-                else{
-                    collidedLeftCell = true
-                }
-            }
-
-            //-----------------DIAGONALS----------------------
-
-            if(!collidedTopLeftCell && x - 1 >= 0 && y - 1 >= 0){
-                if(board[x-1][y-1] === null){
-                    currentPath.push(`${x-1}${y-1}`)
-                }
-                else{
-                    collidedTopLeftCell = true
-                }
-            }
-            if(!collidedTopRightCell && x - 1 >= 0 && y + 1 <= 7){
-                if(board[x-1][y+1] === null){
-                    currentPath.push(`${x-1}${y+1}`)
-                }
-                else{
-                    collidedTopRightCell = true
-                }
-            }
-            if(!collidedBotRightCell && x + 1 <= 7 && y - 1 >= 0){
-                if(board[x+1][y-1] === null){
-                    currentPath.push(`${x+1}${y-1}`)
-                }
-                else{
-                    collidedBotRightCell = true
-                }
-            }
-            if(!collidedBotLeftCell && x + 1 <= 7 && y + 1 <= 7){
-                if(board[x+1][y+1] === null){
-                    currentPath.push(`${x+1}${y+1}`)
-                }
-                else{
-                    collidedBotLeftCell = true
-                }
-            }
-
-            setCellsInPath(currentPath)
+            kingPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
         }
-            
     }
-
-
 
 
 
@@ -410,12 +160,13 @@ export const BoardProvider = ({children}) => {
         setBoard,
         selectedCell,
         setSelectedCell,
-        cellsInPath,
-        setCellsInPath,
-        calculatePath,
+        calculatePathAndThreatenedCells,
         selectCell,
-        ableToKill,
-        setAbleToKill
+        setEnemyPieces,
+        paths,
+        cellsBeingThreatnedBy,
+        calculatePathsAndThreatenedCells,
+        myColorPieces
     }
 
     return <boardContext.Provider value={values}>{children}</boardContext.Provider>

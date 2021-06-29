@@ -1,11 +1,15 @@
-import React from 'react'
+import React, { useEffect } from 'react'
 import { useBoard } from '../contexts/boardContext'
 import '../styles/board.css'
 import Square from './Square'
 
 const Board = () => {
 
-    const {board, isBlack} = useBoard()
+    const {board, isBlack, calculatePathsAndThreatenedCells} = useBoard()
+
+    useEffect(()=>{
+        calculatePathsAndThreatenedCells()
+    },[board])
 
     return (
         <div className='root'>

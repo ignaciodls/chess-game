@@ -3,12 +3,12 @@ import { useBoard } from '../contexts/boardContext'
 
 const Square = ({isBlack, piece, coord}) => {
 
-    const {selectedCell ,setSelectedCell, cellsInPath, calculatePath, selectCell, ableToKill} = useBoard()
+    const {selectedCell, selectCell, paths, cellsBeingThreatnedBy, myColorPieces} = useBoard()
 
     return (
         <div
-         className={`square ${isBlack} ${(selectedCell === coord || cellsInPath.includes(coord)) && 'isSelected'} ${ableToKill.includes(coord) && 'ableToKill'}`}
-         onClick={() => selectCell(coord,piece)}>
+         className={`square ${isBlack} ${(selectedCell === coord || paths[myColorPieces][selectedCell]?.includes(coord)) && 'isSelected'} ${cellsBeingThreatnedBy['ally'][selectedCell]?.includes(coord) && 'ableToKill'}`}
+         onClick={() => selectCell(coord)}>
 
             {piece}
 
