@@ -2,10 +2,30 @@ const usePiecesFunctions = () => {
 
     const pawnPathAndThreatenedCells = (x, y, piece, whitePathsObj, blackPathsObj, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens) => {
 
+        let currentPath = []
+        let currentThreatnedCells = []
+
         if(piece === '♟'){
-            let currentPath = []
+            if(x+1 > 7) return
             
             let firstMove = x === 1 ? true : false
+
+            if(enemyPieces.includes(piece)){
+                if(board[x+1][y-1] !== null && y-1 >= 0){
+                    currentThreatnedCells.push(`${x+1}${y-1}`)
+                }
+                if(board[x+1][y+1] !== null && y+1 <= 7){
+                    currentThreatnedCells.push(`${x+1}${y+1}`)
+                }
+            }
+            else{
+                if(enemyPieces.includes(board[x+1][y-1]) && y-1 >= 0){
+                    currentThreatnedCells.push(`${x+1}${y-1}`)
+                }
+                if(enemyPieces.includes(board[x+1][y+1]) && y+1 <= 8){
+                    currentThreatnedCells.push(`${x+1}${y+1}`)
+                }
+            }
 
             if(firstMove){
                 if(board[x+1][y] === null){
@@ -21,14 +41,38 @@ const usePiecesFunctions = () => {
                 }
             }
 
+            if(enemyPieces.includes(piece)){
+                cellsEnemyThreatens[`${x}${y}`] = currentThreatnedCells
+            }
+            else{
+                cellsIThreathens[`${x}${y}`] = currentThreatnedCells
+            }
 
             blackPathsObj[`${x}${y}`] = currentPath
 
         } 
         if(piece === '♙'){
-            let currentPath = []
             
+            if(x-1 < 0) return
+
             let firstMove = x === 6 ? true : false
+
+            if(enemyPieces.includes(piece)){
+                if(board[x-1][y-1] !== null && y-1 >= 0){
+                    currentThreatnedCells.push(`${x-1}${y-1}`)
+                }
+                if(board[x-1][y+1] !== null && y+1 <= 7){
+                    currentThreatnedCells.push(`${x-1}${y+1}`)
+                }
+            }
+            else{
+                if(enemyPieces.includes(board[x-1][y-1]) && y-1 >= 0){
+                    currentThreatnedCells.push(`${x-1}${y-1}`)
+                }
+                if(enemyPieces.includes(board[x-1][y+1]) && y+1 <= 7){
+                    currentThreatnedCells.push(`${x-1}${y+1}`)
+                }
+            }
 
             if(firstMove){
                 if(board[x-1][y] === null){
@@ -42,6 +86,13 @@ const usePiecesFunctions = () => {
                 if(board[x-1][y] === null){
                     currentPath.push(`${x-1}${y}`)
                 }
+            }
+
+            if(enemyPieces.includes(piece)){
+                cellsEnemyThreatens[`${x}${y}`] = currentThreatnedCells
+            }
+            else{
+                cellsIThreathens[`${x}${y}`] = currentThreatnedCells
             }
 
             whitePathsObj[`${x}${y}`] = currentPath
@@ -402,7 +453,7 @@ const usePiecesFunctions = () => {
             whitePathsObj[`${x}${y}`] = currentPath
         }
         else{
-            blackPathsObj=[`${x}${y}`]
+            blackPathsObj[`${x}${y}`] = currentPath
         }
         if(enemyPieces.includes(piece)){
             cellsEnemyThreatens[`${x}${y}`] = currentThreatnedCells
@@ -417,134 +468,26 @@ const usePiecesFunctions = () => {
 
         let currentPath = []
         let currentThreatnedCells = []
+        let enemyPathsObj = whiteList.includes(piece) ? blackPathsObj : whitePathsObj
+
+        let enemyPathsArr = Object.entries(enemyPathsObj).reduce((acc,arr) => {
+            if(board[arr[0][0]][arr[0][1]] !== enemyPieces[0]){
+                return acc.concat(arr[1])
+            }
+            return acc
+        },[])
+
+        for (let i = -1; i < 2; i++) {
+             for (let j = -1;  j < 2; j++) {
+
+                if(x+i < 0 || x+i > 7 || y+j < 0 || y+j > 7) continue
+
+                if(!enemyPathsArr.includes(`${x+i}${y+j}`) && board[x+i][y+j] === null){
+                    currentPath.push(`${x+i}${y+j}`)
+                }               
+            }     
+        }
         
-        let collidedTopLeftCell = false
-        let collidedTopCell = false
-        let collidedTopRightCell = false
-        let collidedRightCell = false
-        let collidedBotRightCell = false
-        let collidedBotCell = false
-        let collidedBotLeftCell = false
-        let collidedLeftCell = false
-
-        //-----------------ROWS-COLUMNS----------------------
-
-        if(!collidedTopCell && x - 1 >= 0){
-            if(board[x-1][y] === null){
-                currentPath.push(`${x-1}${y}`)
-            }
-            else{
-                collidedTopCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x-1}${y}`)
-                }
-                else if(enemyPieces.includes(board[x-1][y])){
-                    currentThreatnedCells.push(`${x-1}${y}`)
-                }
-            }
-        }
-        if(!collidedRightCell && y + 1 <= 7){
-            if(board[x][y+1] === null){
-                currentPath.push(`${x}${y+1}`)
-            }
-            else{
-                collidedRightCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x}${y+1}`)
-                }
-                else if(enemyPieces.includes(board[x][y+1])){
-                    currentThreatnedCells.push(`${x}${y+1}`)
-                }
-            }
-        }
-        if(!collidedBotCell && x + 1 <= 7){
-            if(board[x+1][y] === null){
-                currentPath.push(`${x+1}${y}`)
-            }
-            else{
-                collidedBotCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x+1}${y}`)
-                }
-                else if(enemyPieces.includes(board[x+1][y])){
-                    currentThreatnedCells.push(`${x+1}${y}`)
-                }
-            }
-        }
-        if(!collidedLeftCell && y - 1 >= 0){
-            if(board[x][y-1] === null){
-                currentPath.push(`${x}${y-1}`)
-            }
-            else{
-                collidedLeftCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x}${y-1}`)
-                }
-                else if(enemyPieces.includes(board[x][y-1])){
-                    currentThreatnedCells.push(`${x}${y-1}`)
-                }
-            }
-        }
-
-        //-----------------DIAGONALS----------------------
-
-        if(!collidedTopLeftCell && x - 1 >= 0 && y - 1 >= 0){
-            if(board[x-1][y-1] === null){
-                currentPath.push(`${x-1}${y-1}`)
-            }
-            else{
-                collidedTopLeftCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x-1}${y-1}`)
-                }
-                else if(enemyPieces.includes(board[x-1][y-1])){
-                    currentThreatnedCells.push(`${x-1}${y-1}`)
-                }
-            }
-        }
-        if(!collidedTopRightCell && x - 1 >= 0 && y + 1 <= 7){
-            if(board[x-1][y+1] === null){
-                currentPath.push(`${x-1}${y+1}`)
-            }
-            else{
-                collidedTopRightCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x-1}${y+1}`)
-                }
-                else if(enemyPieces.includes(board[x-1][y+1])){
-                    currentThreatnedCells.push(`${x-1}${y+1}`)
-                }
-            }
-        }
-        if(!collidedBotRightCell && x + 1 <= 7 && y - 1 >= 0){
-            if(board[x+1][y-1] === null){
-                currentPath.push(`${x+1}${y-1}`)
-            }
-            else{
-                collidedBotRightCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x+1}${y-1}`)
-                }
-                else if(enemyPieces.includes(board[x+1][y-1])){
-                    currentThreatnedCells.push(`${x+1}${y-1}`)
-                }
-            }
-        }
-        if(!collidedBotLeftCell && x + 1 <= 7 && y + 1 <= 7){
-            if(board[x+1][y+1] === null){
-                currentPath.push(`${x+1}${y+1}`)
-            }
-            else{
-                collidedBotLeftCell = true
-                if(enemyPieces.includes(piece)){
-                    currentThreatnedCells.push(`${x+1}${y+1}`)
-                }
-                else if(enemyPieces.includes(board[x+1][y+1])){
-                    currentThreatnedCells.push(`${x+1}${y+1}`)
-                }
-            }
-        }
-
         if(whiteList.includes(piece)){
             whitePathsObj[`${x}${y}`] = currentPath
         }

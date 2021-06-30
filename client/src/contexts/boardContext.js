@@ -4,14 +4,13 @@ import usePiecesFunctions from "../hooks/usePiecesFunctions";
 
 const boardContext = createContext()
 
-
 export const BoardProvider = ({children}) => {
 
     const [board, setBoard] = useState([
-        ["♜","♗","♞","♚","♛","♝","♞","♜"],
+        ["♜","♞","♝","♚","♛","♝","♞","♜"],
         ["♟","♟","♟","♟","♟","♟","♟","♟"],
-        [null,null,null,"♔",null,null,null,null],
-        [null,"♗",null,"♗",null,null,null,"♘"],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,"♟",null,null,null],
         [null,null,null,null,null,null,null,null],
         [null,null,null,null,null,null,null,null],
         ["♙","♙","♙","♙","♙","♙","♙","♙"],
@@ -20,13 +19,28 @@ export const BoardProvider = ({children}) => {
 
     const [selectedCell, setSelectedCell] = useState(null)
 
-    const [enemyPieces, setEnemyPieces] = useState(["♜","♞","♝","♚","♛","♟"])
-
     const [myColorPieces, setMyColorPieces] = useState('white')
+
+    const enemyPieces = myColorPieces === 'white' ? ["♟","♜","♞","♝","♚","♛"] : ["♙","♖","♘","♗","♔","♕"]
 
     const [paths, setPaths] = useState({
         'white':[],
         'black':[]
+    })
+
+    const kings = {
+        'white':'♔',
+        'black':'♚'
+    }
+
+    const [kingsCoords, setKingCoords] = useState({
+        'white':'73',
+        'black':'03'
+    })
+
+    const[check, setCheck] = useState({
+        'enemy':false,
+        'ally':false
     })
 
     const [cellsBeingThreatnedBy, setCellsBeingThreatnedBy] = useState({
@@ -50,17 +64,26 @@ export const BoardProvider = ({children}) => {
         let blackPathsObj = {}
         let cellsIThreathens = {}
         let cellsEnemyThreatens = {}
-        
+        let myKingCoords = []
 
         board.forEach((row,x) => {
             row.forEach((piece,y) => {
 
                 if(piece !== null){
-                    calculatePathAndThreatenedCells(piece, x, y, whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens)
-
+                    if(piece === kings[myColorPieces]){
+                        myKingCoords[0] = x
+                        myKingCoords[1] = y
+                    }
+                    else{
+                        calculatePathAndThreatenedCells(piece, x, y, whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens)
+                    }
                 }
+
             })
         });
+
+        calculatePathAndThreatenedCells(kings[myColorPieces], myKingCoords[0], myKingCoords[1], whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens)
+
         setPaths({
             'white':whitePathsObj,
             'black':blackPathsObj
@@ -94,27 +117,42 @@ export const BoardProvider = ({children}) => {
         }   
     }
 
-    const selectCell = (coord) => {
+    const moveOrTakePiece = (coord) => {
+
+        setBoard(
+            board.map((row,x) =>{
+                return row.map((currPiece,y) => {
+                    if(x === parseInt(coord[0]) && y === parseInt(coord[1])){
+                        return board[selectedCell[0]][selectedCell[1]]
+                    }
+                    else if(x === parseInt(selectedCell[0]) && y === parseInt(selectedCell[1])){
+                        return null
+                    }
+                    else{
+                        return currPiece
+                    }
+                })
+            })
+        )
         
+  
+
+        setSelectedCell(null)
+
+    }
+
+    const selectCell = (coord) => {
+
         if(selectedCell){
             if(paths[myColorPieces][selectedCell]?.includes(coord)){
-                setBoard(
-                    board.map((row,x) =>{
-                        return row.map((currPiece,y) => {
-                            if(x === parseInt(coord[0]) && y === parseInt(coord[1])){
-                                return board[selectedCell[0]][selectedCell[1]]
-                            }
-                            else if(x === parseInt(selectedCell[0]) && y === parseInt(selectedCell[1])){
-                                return null
-                            }
-                            else{
-                                return currPiece
-                            }
-                        })
-                    })
-                )
+                moveOrTakePiece(coord)
+            }
+            else if(cellsBeingThreatnedBy['ally'][selectedCell]?.includes(coord)){
+                moveOrTakePiece(coord)
             }
         }
+
+        if(enemyPieces.includes(board[coord[0]][coord[1]])) return
 
         if(board[coord[0]][coord[1]] !== null){
             setSelectedCell(coord)
@@ -162,7 +200,6 @@ export const BoardProvider = ({children}) => {
         setSelectedCell,
         calculatePathAndThreatenedCells,
         selectCell,
-        setEnemyPieces,
         paths,
         cellsBeingThreatnedBy,
         calculatePathsAndThreatenedCells,
