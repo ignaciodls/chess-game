@@ -1,13 +1,15 @@
 import React from 'react'
 import { useBoard } from '../contexts/boardContext'
 
-const Square = ({isBlack, piece, coord}) => {
+const Square = ({color, piece, coord}) => {
 
-    const {selectedCell, selectCell, paths, cellsBeingThreatnedBy, myColorPieces} = useBoard()
+    const {selectedCell, selectCell, paths, myColorPieces, enemyPieces} = useBoard()
+    const inPath = paths[myColorPieces][selectedCell]?.includes(coord)
+    const isEnemyPiece = enemyPieces.includes(piece)
 
     return (
         <div
-         className={`square ${isBlack} ${(selectedCell === coord || paths[myColorPieces][selectedCell]?.includes(coord)) && 'isSelected'} ${cellsBeingThreatnedBy['ally'][selectedCell]?.includes(coord) && 'ableToKill'}`}
+         className={`square ${color} ${(selectedCell === coord || inPath) && 'isSelected'} ${(inPath && isEnemyPiece) && 'ableToKill'}`}
          onClick={() => selectCell(coord)}>
 
             {piece}

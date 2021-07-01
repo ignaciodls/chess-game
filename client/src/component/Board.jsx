@@ -5,7 +5,7 @@ import Square from './Square'
 
 const Board = () => {
 
-    const {board, isBlack, calculatePathsAndThreatenedCells} = useBoard()
+    const {board, color, calculatePathsAndThreatenedCells} = useBoard()
 
     useEffect(()=>{
         calculatePathsAndThreatenedCells()
@@ -22,7 +22,7 @@ const Board = () => {
                                 row.map((piece,y) => {
                                     return(
                                     <Square
-                                     isBlack={isBlack(x,y)}
+                                     color={color(x,y)}
                                      key={`${x}${y}`}
                                      piece={piece}
                                      coord={`${x}${y}`}

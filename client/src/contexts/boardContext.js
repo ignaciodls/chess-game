@@ -10,18 +10,18 @@ export const BoardProvider = ({children}) => {
         ["♜","♞","♝","♚","♛","♝","♞","♜"],
         ["♟","♟","♟","♟","♟","♟","♟","♟"],
         [null,null,null,null,null,null,null,null],
-        [null,null,null,null,"♟",null,null,null],
-        [null,null,null,null,null,null,null,null],
-        [null,null,null,null,null,null,null,null],
-        ["♙","♙","♙","♙","♙","♙","♙","♙"],
-        ["♖","♘","♗","♔","♕","♗","♘","♖"]
+        [null,null,"♞",null,null,null,null,null],
+        [null,'♜','♔',"♛",null,null,null,null],
+        ["♙",null,"♞",null,null,null,null,null],
+        [null,"♙","♙","♙","♙","♙","♙","♙"],
+        ["♖","♘","♗",null,"♕","♗","♘","♖"]
     ])
 
     const [selectedCell, setSelectedCell] = useState(null)
 
     const [myColorPieces, setMyColorPieces] = useState('white')
 
-    const enemyPieces = myColorPieces === 'white' ? ["♟","♜","♞","♝","♚","♛"] : ["♙","♖","♘","♗","♔","♕"]
+    const enemyPieces = myColorPieces === 'white' ? ["♟","♚","♞","♝","♜","♛"] : ["♙","♔","♘","♗","♖","♕"]
 
     const [paths, setPaths] = useState({
         'white':[],
@@ -43,12 +43,6 @@ export const BoardProvider = ({children}) => {
         'ally':false
     })
 
-    const [cellsBeingThreatnedBy, setCellsBeingThreatnedBy] = useState({
-        'enemy':[],
-        'ally':[]
-    })
-
-    //const blackList=["♜","♞","♝","♚","♛","♟"]
     const whiteList=["♖","♘","♗","♔","♕","♙"]
 
     const { pawnPathAndThreatenedCells,
@@ -62,8 +56,6 @@ export const BoardProvider = ({children}) => {
 
         let whitePathsObj = {}
         let blackPathsObj = {}
-        let cellsIThreathens = {}
-        let cellsEnemyThreatens = {}
         let myKingCoords = []
 
         board.forEach((row,x) => {
@@ -75,26 +67,22 @@ export const BoardProvider = ({children}) => {
                         myKingCoords[1] = y
                     }
                     else{
-                        calculatePathAndThreatenedCells(piece, x, y, whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens)
+                        calculatePathAndThreatenedCells(piece, x, y, whitePathsObj, blackPathsObj)
                     }
                 }
 
             })
         });
 
-        calculatePathAndThreatenedCells(kings[myColorPieces], myKingCoords[0], myKingCoords[1], whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens)
+        calculatePathAndThreatenedCells(kings[myColorPieces], myKingCoords[0], myKingCoords[1], whitePathsObj, blackPathsObj)
 
         setPaths({
             'white':whitePathsObj,
             'black':blackPathsObj
         })
-        setCellsBeingThreatnedBy({
-            'enemy':cellsEnemyThreatens,
-            'ally':cellsIThreathens
-        })
     }
 
-    const isBlack = (x,y) => {
+    const color = (x,y) => {
         
         if(x % 2 === 0){
 
@@ -147,9 +135,6 @@ export const BoardProvider = ({children}) => {
             if(paths[myColorPieces][selectedCell]?.includes(coord)){
                 moveOrTakePiece(coord)
             }
-            else if(cellsBeingThreatnedBy['ally'][selectedCell]?.includes(coord)){
-                moveOrTakePiece(coord)
-            }
         }
 
         if(enemyPieces.includes(board[coord[0]][coord[1]])) return
@@ -163,37 +148,37 @@ export const BoardProvider = ({children}) => {
 
     }
 
-    const calculatePathAndThreatenedCells = (piece, x, y, whitePathsObj, blackPathsObj, cellsIThreathens, cellsEnemyThreatens) => {
+    const calculatePathAndThreatenedCells = (piece, x, y, whitePathsObj, blackPathsObj) => {
 
         if(piece === '♙' || piece === '♟'){
-            pawnPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
+            pawnPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, board, enemyPieces)
         }
 
         if(piece === '♘' || piece === '♞'){
-            knightPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
+            knightPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces)
         } 
 
         if(piece === '♗' || piece === '♝'){
-            bishopPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)            
+            bishopPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, kings, myColorPieces)            
         }
 
         if(piece === '♖' || piece === '♜'){
-            rookPathAndThreatenedCells(x, y, piece ,whitePathsObj, blackPathsObj ,whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
+            rookPathAndThreatenedCells(x, y, piece ,whitePathsObj, blackPathsObj ,whiteList, board, enemyPieces, kings, myColorPieces)
         }
 
         if(piece === '♕' || piece === '♛'){
-            queenPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
+            queenPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, kings, myColorPieces)
         }
 
         if(piece === '♔' || piece === '♚'){
-            kingPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, cellsIThreathens, cellsEnemyThreatens)
+            kingPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces)
         }
     }
 
 
 
     const values = {
-        isBlack,
+        color,
         board,
         setBoard,
         selectedCell,
@@ -201,9 +186,9 @@ export const BoardProvider = ({children}) => {
         calculatePathAndThreatenedCells,
         selectCell,
         paths,
-        cellsBeingThreatnedBy,
         calculatePathsAndThreatenedCells,
-        myColorPieces
+        myColorPieces,
+        enemyPieces
     }
 
     return <boardContext.Provider value={values}>{children}</boardContext.Provider>
