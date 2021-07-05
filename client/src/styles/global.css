@@ -1,0 +1,166 @@
+  
+@import url('https://fonts.googleapis.com/css2?family=Varela+Round&display=swap');
+
+.root{
+
+    height: 100vh;
+    width: 100vw;
+    font-family: 'Varela Round';
+    background-color: #2b2937;
+    
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    user-select: none;
+
+}
+
+.board{
+    height: 90vh;
+    width: 90vh;
+    display: flex;
+    border: 10px solid rgb(78, 69, 45);
+    flex-direction: column;
+    
+}
+
+.columnReverse{
+    flex-direction: column-reverse;
+}
+
+.rowReverse{
+    flex-direction: row-reverse;
+}
+
+.row{
+
+    display: flex;
+    height: 12.5%;
+    width: 100%;
+
+}
+
+.square{
+    width: 12.5%;
+    height: 100%;
+    font-size: 60px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.black{
+    background-color: rgb(128, 194, 115);
+}
+
+.white{
+    background-color: white;
+}
+
+.isSelected{
+    
+    background-color: rgb(56, 179, 255);
+    -webkit-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    -moz-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+}
+.ableToKill{
+    background-color: rgba(255, 0, 0, .7);
+    -webkit-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    -moz-box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+    box-shadow: inset 0px 0px 30px -8px rgba(0,0,0,1);
+}
+
+.wrapper{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 15px;
+}
+
+.chessTitle{
+
+    font-size: 80px;
+    color: #25a327;
+    font-weight: bold;
+    
+}
+
+.text{
+
+    font-size: 50px;
+    color: #25a327;
+    font-weight: bold;
+
+}
+
+.button{
+
+    font-size: 30px;
+    background-color: #25a327;
+    border-radius: 3px;
+    color: white;
+    padding: 15px;
+    font-weight: bold;
+    letter-spacing: 1px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+}
+
+.button:hover{
+    cursor: pointer;
+    background-color: #25a327;
+}
+
+.waitingDiv{
+
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    font-size: 30px;
+    font-weight: bold;
+
+}
+
+.waitingDivRow1{
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    color: #25a327;
+}
+
+.waitingDivRow2{
+    animation-name: loading;
+    animation-duration: 1s;
+    animation-direction: alternate-reverse;
+    animation-iteration-count: infinite;
+}
+
+.copyButton{
+
+    background-color: #25a327;
+    padding: 10px;
+    border-radius: 3px;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: whitesmoke;
+    font-size: 20px;
+
+}
+
+.copyButton:hover{
+
+    cursor: pointer;
+    background-color: #209922;
+
+}
+
+@keyframes loading {
+    from{color: #25a327;}
+    to{color: #7fdb80;}
+}

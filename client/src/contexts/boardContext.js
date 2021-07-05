@@ -1,27 +1,38 @@
 import { createContext, useContext, useState } from "react";
 import usePiecesFunctions from "../hooks/usePiecesFunctions";
-
+import { useSocket } from "./socketContext";
 
 const boardContext = createContext()
 
 export const BoardProvider = ({children}) => {
 
-    const [board, setBoard] = useState([
-        ["♜","♞","♝","♚","♛","♝","♞","♜"],
+    const socket = useSocket()
+
+    const initialBoard = [
+        ["♜","♞","♝","♛",'♚',"♝","♞","♜"],
         ["♟","♟","♟","♟","♟","♟","♟","♟"],
         [null,null,null,null,null,null,null,null],
-        [null,null,"♞",null,null,null,null,null],
-        [null,'♜','♔',"♛",null,null,null,null],
-        ["♙",null,"♞",null,null,null,null,null],
-        [null,"♙","♙","♙","♙","♙","♙","♙"],
-        ["♖","♘","♗",null,"♕","♗","♘","♖"]
-    ])
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        [null,null,null,null,null,null,null,null],
+        ["♙","♙","♙","♙","♙","♙","♙","♙"],
+        ["♖","♘","♗","♕",'♔',"♗","♘","♖"]
+    ]
+
+    const [board, setBoard] = useState(initialBoard)
 
     const [selectedCell, setSelectedCell] = useState(null)
 
-    const [myColorPieces, setMyColorPieces] = useState('white')
+    const [myColorPieces, setMyColorPieces] = useState(null)
+    
+    const enemyPieces = myColorPieces === 'white' ? ["♟","♚","♞","♝","♛","♜"] : ["♙","♔","♘","♗","♕","♖"]
+    const myPieces =  myColorPieces === 'white' ? ["♙","♔","♘","♗","♕","♖",] : ["♟","♚","♞","♝","♛","♜"]
 
-    const enemyPieces = myColorPieces === 'white' ? ["♟","♚","♞","♝","♜","♛"] : ["♙","♔","♘","♗","♖","♕"]
+    const whiteList=["♖","♘","♗","♔","♕","♙"]
+
+    const [myTurn, setMyTurn] = useState(false)
+
+    const [imGameRequester, setImGameRequester] = useState(false)
 
     const [paths, setPaths] = useState({
         'white':[],
@@ -33,17 +44,7 @@ export const BoardProvider = ({children}) => {
         'black':'♚'
     }
 
-    const [kingsCoords, setKingCoords] = useState({
-        'white':'73',
-        'black':'03'
-    })
-
-    const[check, setCheck] = useState({
-        'enemy':false,
-        'ally':false
-    })
-
-    const whiteList=["♖","♘","♗","♔","♕","♙"]
+    const [imInCheck, setImInCheck] = useState(false)
 
     const { pawnPathAndThreatenedCells,
             knightPathAndThreatenedCells,
@@ -52,7 +53,7 @@ export const BoardProvider = ({children}) => {
             queenPathAndThreatenedCells,
             kingPathAndThreatenedCells  } = usePiecesFunctions()
 
-    const calculatePathsAndThreatenedCells = () =>{
+    const calculatePathsAndThreatenedCells = (roomId) =>{
 
         let whitePathsObj = {}
         let blackPathsObj = {}
@@ -74,7 +75,7 @@ export const BoardProvider = ({children}) => {
             })
         });
 
-        calculatePathAndThreatenedCells(kings[myColorPieces], myKingCoords[0], myKingCoords[1], whitePathsObj, blackPathsObj)
+        calculatePathAndThreatenedCells(kings[myColorPieces], myKingCoords[0], myKingCoords[1], whitePathsObj, blackPathsObj, roomId)
 
         setPaths({
             'white':whitePathsObj,
@@ -105,50 +106,58 @@ export const BoardProvider = ({children}) => {
         }   
     }
 
-    const moveOrTakePiece = (coord) => {
+    const moveOrTakePiece = (coord, roomId) => {
 
-        setBoard(
-            board.map((row,x) =>{
-                return row.map((currPiece,y) => {
-                    if(x === parseInt(coord[0]) && y === parseInt(coord[1])){
-                        return board[selectedCell[0]][selectedCell[1]]
+        let newBoard = board.map((row,x) =>{
+            return row.map((currPiece,y) => {
+
+                if(x === parseInt(coord[0]) && y === parseInt(coord[1])){
+                    if(board[selectedCell[0]][selectedCell[1]] === "♟" && x === 7){
+                        return myPieces[4]
                     }
-                    else if(x === parseInt(selectedCell[0]) && y === parseInt(selectedCell[1])){
-                        return null
+                    else if(board[selectedCell[0]][selectedCell[1]] === "♙" && x === 0){
+                        return myPieces[4]
                     }
                     else{
-                        return currPiece
+                        return board[selectedCell[0]][selectedCell[1]]
                     }
-                })
+                }
+                else if(x === parseInt(selectedCell[0]) && y === parseInt(selectedCell[1])){
+                    return null
+                }
+                else{
+                    return currPiece
+                }
             })
-        )
-        
-  
+        })
+
+        socket.emit('board', newBoard, roomId)
 
         setSelectedCell(null)
 
     }
 
-    const selectCell = (coord) => {
+    const selectCell = (coord, roomId) => {
 
-        if(selectedCell){
-            if(paths[myColorPieces][selectedCell]?.includes(coord)){
-                moveOrTakePiece(coord)
+        if(myTurn){
+            if(selectedCell){
+                if(paths[myColorPieces][selectedCell]?.includes(coord)){
+                    moveOrTakePiece(coord, roomId)
+                }
+            }
+    
+            if(enemyPieces.includes(board[coord[0]][coord[1]])) return
+    
+            if(board[coord[0]][coord[1]] !== null){
+                setSelectedCell(coord)
+            }
+            if(board[coord[0]][coord[1]] == null){
+                setSelectedCell(null)
             }
         }
-
-        if(enemyPieces.includes(board[coord[0]][coord[1]])) return
-
-        if(board[coord[0]][coord[1]] !== null){
-            setSelectedCell(coord)
-        }
-        if(board[coord[0]][coord[1]] == null){
-            setSelectedCell(null)
-        }
-
     }
 
-    const calculatePathAndThreatenedCells = (piece, x, y, whitePathsObj, blackPathsObj) => {
+    const calculatePathAndThreatenedCells = (piece, x, y, whitePathsObj, blackPathsObj, roomId) => {
 
         if(piece === '♙' || piece === '♟'){
             pawnPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, board, enemyPieces)
@@ -171,7 +180,7 @@ export const BoardProvider = ({children}) => {
         }
 
         if(piece === '♔' || piece === '♚'){
-            kingPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces)
+            kingPathAndThreatenedCells(x, y, piece, whitePathsObj, blackPathsObj, whiteList, board, enemyPieces, setImInCheck, roomId, myColorPieces)
         }
     }
 
@@ -188,7 +197,17 @@ export const BoardProvider = ({children}) => {
         paths,
         calculatePathsAndThreatenedCells,
         myColorPieces,
-        enemyPieces
+        setMyColorPieces,
+        enemyPieces,
+        imInCheck,
+        myPieces,
+        myTurn,
+        setMyTurn,
+        setImInCheck,
+        imGameRequester,
+        setImGameRequester,
+        initialBoard
+        
     }
 
     return <boardContext.Provider value={values}>{children}</boardContext.Provider>

@@ -13,7 +13,7 @@ class Server{
 
         this.io = socketio( this.server, {
             cors: {
-                origin: "*",
+                origin: "https://chess-game-21ba5.web.app",
               }
          } );
 
@@ -38,9 +38,7 @@ class Server{
 
         this.configureSockets();
 
-        this.server.listen( 8000 , () => {
-            console.log('Server is running!')
-        })
+        this.server.listen( process.env.PORT )
 
     }
 
